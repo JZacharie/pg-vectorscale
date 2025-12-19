@@ -1,5 +1,5 @@
 # --- Étape 1 : Construction ---
-FROM ghcr.io/cloudnative-pg/postgresql:17.2 AS builder
+FROM ghcr.io/cloudnative-pg/postgresql:17.7 AS builder
 
 USER root
 
@@ -32,7 +32,7 @@ RUN git clone https://github.com/timescale/pgvectorscale.git /tmp/pgvectorscale 
 
 # --- Étape 2 : Image Finale ---
 # Remplacez 17.2 par 17.7 dès qu'elle est disponible sur ghcr.io
-FROM ghcr.io/cloudnative-pg/postgresql:17.2
+FROM ghcr.io/cloudnative-pg/postgresql:17.7
 
 USER root
 
