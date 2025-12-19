@@ -15,6 +15,9 @@ Image Docker PostgreSQL 17.2 basée sur [CloudNativePG](https://cloudnative-pg.i
 docker pull ghcr.io/jzacharie/pg-vectorscale:latest
 ```
 
+> [!NOTE]
+> Cette image est construite pour l'architecture **linux/amd64** uniquement, optimisée pour des builds rapides (~20-30 minutes).
+
 ### Démarrage rapide
 
 ```bash
@@ -100,16 +103,14 @@ docker run --rm -e POSTGRES_PASSWORD=test pg-vectorscale:local postgres --versio
 
 ### Build multi-plateforme
 
-```bash
-# Créer un builder buildx
-docker buildx create --use
+Si vous avez besoin du support arm64, modifiez `.github/workflows/docker-build.yaml` :
 
-# Build pour amd64 et arm64
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t pg-vectorscale:local \
-  --load \
-  .
+```yaml
+platforms: linux/amd64,linux/arm64
+```
+
+> [!WARNING]
+> Le build multi-plateforme prendra environ 2x plus de temps (~40-60 minutes au total).
 ```
 
 ## Versions

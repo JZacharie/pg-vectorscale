@@ -19,6 +19,11 @@ RUN apt-get update && apt-get install -y \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install sccache for Rust compilation caching
+RUN cargo install sccache --locked
+ENV RUSTC_WRAPPER=sccache
+ENV SCCACHE_DIR=/root/.cache/sccache
+
 # Clone pgvectorscale first to detect pgrx version
 RUN git clone https://github.com/timescale/pgvectorscale.git /tmp/pgvectorscale
 
