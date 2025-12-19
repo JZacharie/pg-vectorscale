@@ -35,7 +35,11 @@ RUN git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git /tmp/pgve
 
 # 2. Compilation de pgvectorscale
 RUN cd /tmp/pgvectorscale/pgvectorscale \
-    && cargo pgrx install --release
+    && cargo pgrx install --release \
+    && echo "=== Verifying pgvectorscale installation ===" \
+    && ls -la /usr/lib/postgresql/17/lib/ | grep -i vector || echo "No vector files in lib" \
+    && ls -la /usr/share/postgresql/17/extension/ | grep -i vector || echo "No vector files in extension" \
+    && find /usr -name "vectorscale.so" 2>/dev/null || echo "vectorscale.so not found anywhere"
 
 # --- Étape 2 : Image Finale ---
 # Remplacez 17.2 par 17.7 dès qu'elle est disponible sur ghcr.io
@@ -48,7 +52,7 @@ COPY --from=builder /usr/lib/postgresql/17/lib/vector.so /usr/lib/postgresql/17/
 COPY --from=builder /usr/share/postgresql/17/extension/vector* /usr/share/postgresql/17/extension/
 
 # Récupération de pgvectorscale
-COPY --from=builder /usr/lib/postgresql/17/lib/vectorscale.so /usr/lib/postgresql/17/lib/
+COPY --from=builder /usr/lib/postgresql/17/lib/vectorscale*.so /usr/lib/postgresql/17/lib/
 COPY --from=builder /usr/share/postgresql/17/extension/vectorscale* /usr/share/postgresql/17/extension/
 
 # CNPG tourne avec l'utilisateur 26
