@@ -12,13 +12,21 @@ RUN apt-get update && apt-get install -y \
     cmake \
     libclang-dev \
     pkg-config \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
-# Installation de Rust et cargo-pgrx
+# Installation de Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-RUN cargo install --locked cargo-pgrx --version 0.12.6
-RUN cargo pgrx init --pg17 /usr/bin/pg_config
+
+# Clone pgvectorscale first to detect pgrx version
+RUN git clone https://github.com/timescale/pgvectorscale.git /tmp/pgvectorscale
+
+# Install cargo-pgrx with the same version as pgrx dependency
+RUN cd /tmp/pgvectorscale/pgvectorscale && \
+    PGRX_VERSION=$(cargo metadata --format-version 1 | jq -r '.packages[] | select(.name == "pgrx") | .version') && \
+    cargo install --locked cargo-pgrx --version $PGRX_VERSION && \
+    cargo pgrx init --pg17 /usr/bin/pg_config
 
 # 1. Compilation de pgvector (pré-requis)
 RUN git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git /tmp/pgvector \
@@ -26,8 +34,7 @@ RUN git clone --branch v0.8.0 https://github.com/pgvector/pgvector.git /tmp/pgve
     && make clean && make && make install
 
 # 2. Compilation de pgvectorscale
-RUN git clone https://github.com/timescale/pgvectorscale.git /tmp/pgvectorscale \
-    && cd /tmp/pgvectorscale/pgvectorscale \
+RUN cd /tmp/pgvectorscale/pgvectorscale \
     && cargo pgrx install --release
 
 # --- Étape 2 : Image Finale ---
