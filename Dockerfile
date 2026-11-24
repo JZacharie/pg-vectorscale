@@ -1,12 +1,12 @@
-# --- Étape 1 : Construction ---
-FROM ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie AS builder
+﻿# --- Étape 1 : Construction ---
+FROM ghcr.io/cloudnative-pg/postgresql:17.9-system-trixie AS builder
 
 USER root
 
 # Installation des dépendances système
 RUN apt-get update && apt-get install -y \
     build-essential \
-    postgresql-server-dev-18 \
+    postgresql-server-dev-17 \
     curl \
     git \
     cmake \
@@ -31,23 +31,23 @@ RUN git clone --branch 0.9.1 --depth 1 https://github.com/timescale/pgvectorscal
 RUN cd /tmp/pgvectorscale/pgvectorscale && \
     PGRX_VERSION=$(cargo metadata --format-version 1 | jq -r '.packages[] | select(.name == "pgrx") | .version') && \
     cargo install --locked cargo-pgrx --version $PGRX_VERSION && \
-    cargo pgrx init --pg18 /usr/bin/pg_config
+    cargo pgrx init --pg17 /usr/bin/pg_config
 
-# Compilation de pgvectorscale pour PostgreSQL 18
+# Compilation de pgvectorscale pour PostgreSQL 17 (Trixie)
 RUN cd /tmp/pgvectorscale/pgvectorscale \
-    && cargo pgrx install --release \
+    && cargo pgrx install --release --no-default-features --features "pg17,build_parallel" \
     && echo "=== Verifying pgvectorscale installation ===" \
-    && ls -la /usr/lib/postgresql/18/lib/ | grep -i vector \
-    && ls -la /usr/share/postgresql/18/extension/ | grep -i vector
+    && ls -la /usr/lib/postgresql/17/lib/ | grep -i vector \
+    && ls -la /usr/share/postgresql/17/extension/ | grep -i vector
 
 # --- Étape 2 : Image Finale ---
-FROM ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie
+FROM ghcr.io/cloudnative-pg/postgresql:17.9-system-trixie
 
 USER root
 
-# Récupération de pgvectorscale (pgvector 0.8.6 est déjà inclus dans 18.6-system-trixie)
-COPY --from=builder /usr/lib/postgresql/18/lib/vectorscale*.so /usr/lib/postgresql/18/lib/
-COPY --from=builder /usr/share/postgresql/18/extension/vectorscale* /usr/share/postgresql/18/extension/
+# Récupération de pgvectorscale (pgvector est déjà inclus dans 17.9-system-trixie)
+COPY --from=builder /usr/lib/postgresql/17/lib/vectorscale*.so /usr/lib/postgresql/17/lib/
+COPY --from=builder /usr/share/postgresql/17/extension/vectorscale* /usr/share/postgresql/17/extension/
 
 # CNPG tourne avec l'utilisateur 26
 USER 26
